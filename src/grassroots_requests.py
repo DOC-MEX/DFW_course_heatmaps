@@ -3,7 +3,7 @@ import json
 
 
 server_url = "http://localhost:2000/grassroots/public_backend"
-#server_url = "https://grassroots.tools/public_backend"
+server_url = "https://grassroots.tools/public_backend"
 
 '''
 Get study using id
