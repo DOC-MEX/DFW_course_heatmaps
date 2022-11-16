@@ -12,27 +12,28 @@ import os
 
 import plotly.express as px
 
-def dict_phenotypes(pheno, plots):
-    """Extract traits of phenotypes 
+
+####################################################################################
+def dict_descriptions(pheno, plots):
+    """Extract descriptions of phenotypes 
 
     Args:
         pheno: list of phenotypes of a particular study 
         plots     : plots data of a particular study
 
     Returns:
-        dictionary: keys: phenotypes names, values: traits
+        dictionary: keys: phenotypes names, values: descriptions
     """
 
-    names = []
-    traits = []
+    names  = []
+    description = []
     for key in pheno:
         #print("-->", key)
-         
 
         names.append(key)
-        traits.append(pheno[key]['definition']['trait']['so:name'])
+        description.append(pheno[key]['definition']['trait']['so:description'])
 
-    phenoDict = dict(zip(names, traits))
+    phenoDict = dict(zip(names, description))
 
     for j in range(len(plots)):
         if ( 'discard' in plots[j]['rows'][0] ):
@@ -49,7 +50,85 @@ def dict_phenotypes(pheno, plots):
                         #print("Remove pheonotypes with non-numeric value:", phenoDict[name])
                         del phenoDict[name]
     
-    return phenoDict    
+    return phenoDict  
+
+####################################################################################
+def dict_otherName(pheno, plots):
+    """Extract value using  so:sameAs key
+
+    Args:
+        pheno: list of phenotypes of a particular study 
+        plots     : plots data of a particular study
+
+    Returns:
+        dictionary: keys: phenotypes names, values: descriptions
+    """
+
+    names  = []
+    description = []
+    for key in pheno:
+        #print("-->", key)
+
+        names.append(key)
+        description.append(pheno[key]['definition']['trait']['so:sameAs'])
+
+    phenoDict = dict(zip(names, description))
+
+    for j in range(len(plots)):
+        if ( 'discard' in plots[j]['rows'][0] ):
+            pass
+        if ('observations' in plots[j]['rows'][0]):
+            for k in range(len(plots[j]['rows'][0]['observations'])):
+                if ('raw_value' in plots[j]['rows'][0]['observations'][k]):
+                    rawValue = plots[j]['rows'][0]['observations'][k]['raw_value']
+                if ('corrected_value' in plots[j]['rows'][0]['observations'][k]):
+                    rawValue = plots[j]['rows'][0]['observations'][k]['corrected_value']
+                if ( type(rawValue) == str):
+                    name = plots[j]['rows'][0]['observations'][k]['phenotype']['variable']
+                    if( name in phenoDict.keys() ):
+                        #print("Remove pheonotypes with non-numeric value:", phenoDict[name])
+                        del phenoDict[name]
+    
+    return phenoDict  
+
+####################################################################################
+def dict_units(pheno, plots):
+    """Extract units
+
+    Args:
+        pheno: list of phenotypes of a particular study 
+        plots     : plots data of a particular study
+
+    Returns:
+        dictionary: keys: phenotypes names, values: units
+    """
+
+    names  = []
+    description = []
+    for key in pheno:
+        #print("-->", key)
+
+        names.append(key)
+        description.append(pheno[key]['definition']['unit']['so:name'])
+
+    phenoDict = dict(zip(names, description))
+
+    for j in range(len(plots)):
+        if ( 'discard' in plots[j]['rows'][0] ):
+            pass
+        if ('observations' in plots[j]['rows'][0]):
+            for k in range(len(plots[j]['rows'][0]['observations'])):
+                if ('raw_value' in plots[j]['rows'][0]['observations'][k]):
+                    rawValue = plots[j]['rows'][0]['observations'][k]['raw_value']
+                if ('corrected_value' in plots[j]['rows'][0]['observations'][k]):
+                    rawValue = plots[j]['rows'][0]['observations'][k]['corrected_value']
+                if ( type(rawValue) == str):
+                    name = plots[j]['rows'][0]['observations'][k]['phenotype']['variable']
+                    if( name in phenoDict.keys() ):
+                        #print("Remove pheonotypes with non-numeric value:", phenoDict[name])
+                        del phenoDict[name]
+    
+    return phenoDict  
 
 
 ###################################################################
@@ -134,18 +213,52 @@ def dict_phenotypes(pheno, plots):
                         # print("Remove:", phenoDict[name])
                         del phenoDict[name]
     
-    return phenoDict    
+    return phenoDict   
 
 
+######################################################################
+# for Jupyter notebook. Simplify presentation of code.
+def print_plot_data(json_study, phenotype_selected):
+
+    single_study  = json.loads(json_study)
+    plots_arrays  = matrices(single_study, phenotype_selected)
+    #np.flipud
+    values =  plots_arrays[2]
+    data   = values.reshape(plots_arrays[0], plots_arrays[1])
+    print( plots_arrays[3])
+    print(np.flipud(data))
+
+######################################################################
+# for Jupyter notebook. Simplify presentation of code.
+def print_phenotype_traits(json_study):
+
+    # Basic Description of each phenotype observed in current study
+    single_study = json.loads(json_study) # 
+
+    phenotypes = single_study['results'][0]['results'][0]['data']['phenotypes']
+    plots      = single_study['results'][0]['results'][0]['data']['plots']
+    traits = dict_phenotypes(phenotypes, plots)
+    units = dict_units(phenotypes, plots)
+    
+    
+    i=1
+    for item in traits:
+        print(f'{i}) {item}:  ({traits[item]})   Units: {units[item]} ')
+        i=i+1
+    
+    study = single_study['results'][0]['results'][0]['data']['so:name']
+    print("\n")
+    print("Study name:", study)
+    print("Total number of phenotypes observed in current study:", len(traits))
 
 
 ##############--------------------------------##########################
 #### new plotly function. Reduce lines of code for jupyter notebook###
-def plotly_heatmap(json_study, colormap, index):
+def plotly_heatmap(json_study, colormap, phenotype_selected):
     single_study = json.loads(json_study) # "Deserialising" data 
 
     phenotypes         = single_study['results'][0]['results'][0]['data']['phenotypes']
-    phenotype_selected = list(phenotypes.keys())[index]
+    #phenotype_selected = list(phenotypes.keys())[index]
     arrays             = matrices(single_study, phenotype_selected)
 
     rows       = arrays[0] 
@@ -160,12 +273,12 @@ def plotly_heatmap(json_study, colormap, index):
 
 ##############--------------------------------##########################
 #### new seaborn function. Reduce lines of code for jupyter notebook###
-def seaborn_heatmap(json_study, colormap, index):
+def seaborn_heatmap(json_study, colormap, phenotype_selected):
 
     single_study = json.loads(json_study) # "Deserialising" data 
 
     phenotypes         = single_study['results'][0]['results'][0]['data']['phenotypes']
-    phenotype_selected = list(phenotypes.keys())[index]
+    #phenotype_selected = list(phenotypes.keys())[index]
     arrays             = matrices(single_study, phenotype_selected)
 
     rows       = arrays[0] 
@@ -458,7 +571,7 @@ test rendering seaborn image
 #def seaborn_plot(numpy_matrix, title, unit, name):
 def seaborn_plot(numpy_matrix, title, unit, name, color_map):
 
-    sns.set(rc={'figure.figsize':(15.5,6.5)})
+    sns.set(rc={'figure.figsize':(15.5,5.7)})
 
     numpy_matrix = np.flipud(numpy_matrix)      # To Match order shown originally in JS code
     notAvailable = np.zeros_like(numpy_matrix)
