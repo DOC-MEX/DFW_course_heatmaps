@@ -149,7 +149,7 @@ def dict_phenotypes(pheno, plots):
                 if ( type(rawValue) == str):
                     name = plots[j]['rows'][0]['observations'][k]['phenotype']['variable']
                     if( name in phenoDict.keys() ):
-                        print("Remove:", phenoDict[name])
+                        #print("Remove:", phenoDict[name])
                         del phenoDict[name]
     
     return phenoDict    
